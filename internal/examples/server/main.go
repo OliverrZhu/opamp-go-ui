@@ -5,9 +5,9 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/open-telemetry/opamp-go/internal/examples/server/apisrv"
 	"github.com/open-telemetry/opamp-go/internal/examples/server/data"
 	"github.com/open-telemetry/opamp-go/internal/examples/server/opampsrv"
-	"github.com/open-telemetry/opamp-go/internal/examples/server/uisrv"
 )
 
 var logger = log.New(log.Default().Writer(), "[MAIN] ", log.Default().Flags()|log.Lmsgprefix|log.Lmicroseconds)
@@ -21,7 +21,7 @@ func main() {
 	logger.Println("OpAMP Server starting...")
 
 	// Start servers
-	uisrv.Start(curDir)
+	apisrv.Start(curDir)
 	opampSrv := opampsrv.NewServer(&data.AllAgents)
 	opampSrv.Start()
 
@@ -34,6 +34,6 @@ func main() {
 	<-interrupt
 
 	logger.Println("OpAMP Server shutting down...")
-	uisrv.Shutdown()
+	apisrv.Shutdown()
 	opampSrv.Stop()
 }
