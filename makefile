@@ -76,3 +76,15 @@ tidy:
 	go mod tidy
 	cd internal/examples && rm -fr go.sum && go mod tidy
 	cd internal/tools && rm -fr go.sum && go mod tidy
+
+.PHONY: server
+server:
+	cd internal/examples/server && go run .
+
+.PHONY: agent
+agent:
+	cd internal/examples/agent && go run .
+
+.PHONY: ui
+ui:
+	cd opamp-ui && pnpm run dev

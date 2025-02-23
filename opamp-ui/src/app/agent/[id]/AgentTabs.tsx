@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Agent } from './types';
 import { DetailCard, AttributeList } from './components';
+import MonacoEditor from '@/app/components/MonacoEditor';
 
 interface Props {
   agent: Agent;
@@ -34,14 +35,16 @@ function ConfigEditor({ config, onSave }: {
   const [isEditing, setIsEditing] = useState(false);
   const [configValue, setConfigValue] = useState(config);
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSave = async () => {
     setIsSaving(true);
+    setError(null);
     try {
       await onSave(configValue);
       setIsEditing(false);
     } catch (error) {
-      console.error('Failed to save config:', error);
+      setError(error instanceof Error ? error.message : 'Failed to save configuration');
     } finally {
       setIsSaving(false);
     }
@@ -66,6 +69,7 @@ function ConfigEditor({ config, onSave }: {
                 onClick={() => {
                   setIsEditing(false);
                   setConfigValue(config);
+                  setError(null);
                 }}
                 className="px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg 
                   transition-colors font-medium text-sm"
@@ -89,15 +93,17 @@ function ConfigEditor({ config, onSave }: {
           )}
         </div>
       </div>
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
       <div className="relative">
-        <textarea
+        <MonacoEditor
           value={configValue}
-          onChange={(e) => setConfigValue(e.target.value)}
-          disabled={!isEditing}
-          className={`w-full h-[500px] font-mono text-sm bg-gray-50 p-4 rounded-lg
-            border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500
-            ${!isEditing ? 'cursor-not-allowed' : ''}`}
-          spellCheck="false"
+          onChange={setConfigValue}
+          readOnly={!isEditing}
+          height="500px"
         />
       </div>
     </div>
