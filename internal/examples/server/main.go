@@ -20,12 +20,15 @@ func main() {
 
 	logger.Println("OpAMP Server starting...")
 
+	// Start servers
 	uisrv.Start(curDir)
 	opampSrv := opampsrv.NewServer(&data.AllAgents)
 	opampSrv.Start()
 
-	logger.Println("OpAMP Server running...")
+	logger.Println("OpAMP Server running on :4321")
+	logger.Println("Web UI available at http://localhost:4321")
 
+	// Wait for interrupt signal
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 	<-interrupt

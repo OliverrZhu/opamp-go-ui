@@ -2,9 +2,11 @@ package uisrv
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"path"
+	"strings"
 	"text/template"
 	"time"
 
@@ -24,10 +26,19 @@ func Start(rootDir string) {
 	htmlDir = path.Join(rootDir, "uisrv/html")
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", renderRoot)
-	mux.HandleFunc("/agent", renderAgent)
+
+	// API routes
+	mux.HandleFunc("/api/agents", handleAgentsAPI)
+	mux.HandleFunc("/api/agent/", handleAgentAPI)
+
+	// Form submission handlers
 	mux.HandleFunc("/save_config", saveCustomConfigForInstance)
 	mux.HandleFunc("/rotate_client_cert", rotateInstanceClientCert)
+
+	// Static files
+	fs := http.FileServer(http.Dir(htmlDir))
+	mux.Handle("/", fs)
+
 	srv = &http.Server{
 		Addr:    "0.0.0.0:4321",
 		Handler: mux,
@@ -60,12 +71,26 @@ func renderTemplate(w http.ResponseWriter, htmlTemplateFile string, data interfa
 	}
 }
 
-func renderRoot(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, "root.html", data.AllAgents.GetAllAgentsReadonlyClone())
+func renderJSON(w http.ResponseWriter, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
 }
 
-func renderAgent(w http.ResponseWriter, r *http.Request) {
-	uid, err := uuid.Parse(r.URL.Query().Get("instanceid"))
+func handleAgentsAPI(w http.ResponseWriter, r *http.Request) {
+	agents := data.AllAgents.GetAllAgentsReadonlyClone()
+	renderJSON(w, agents)
+}
+
+func handleAgentAPI(w http.ResponseWriter, r *http.Request) {
+	// Extract instance ID from URL path
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 4 {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	instanceID := pathParts[3]
+
+	uid, err := uuid.Parse(instanceID)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -76,7 +101,7 @@ func renderAgent(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	renderTemplate(w, "agent.html", agent)
+	renderJSON(w, agent)
 }
 
 func saveCustomConfigForInstance(w http.ResponseWriter, r *http.Request) {
